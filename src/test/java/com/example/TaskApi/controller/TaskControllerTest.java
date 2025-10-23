@@ -1,6 +1,8 @@
 package com.example.TaskApi.controller;
 
 import com.example.TaskApi.dto.TaskRequest;
+import com.example.TaskApi.dto.TaskResponse;
+import com.example.TaskApi.dto.TaskStatusUpdateRequest;
 import com.example.TaskApi.model.Role;
 import com.example.TaskApi.model.Task;
 import com.example.TaskApi.model.TaskStatus;
@@ -95,7 +97,8 @@ public class TaskControllerTest {
     @Test
     @WithMockUser(username = "test@example.com", roles = "USER")
     void createTask_Success_ShouldReturn201Created() throws Exception {
-        given(taskService.createTask(any(TaskRequest.class), eq("test@example.com"))).willReturn(testTask);
+        given(taskService.createTask(any(TaskRequest.class), eq("test@example.com")))
+                .willReturn(new TaskResponse(testTask));
 
         mockMvc.perform(post("/tasks")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -121,7 +124,8 @@ public class TaskControllerTest {
     @Test
     @WithMockUser(username = "test@example.com", roles = "USER")
     void getTasks_Success_ShouldReturnListOfTasks() throws Exception {
-        given(taskService.getTasksForUser("test@example.com")).willReturn(List.of(testTask));
+        given(taskService.getTasksForUser("test@example.com"))
+                .willReturn(List.of(new TaskResponse(testTask)));
 
         mockMvc.perform(get("/tasks")
                         .contentType(MediaType.APPLICATION_JSON))
@@ -141,12 +145,17 @@ public class TaskControllerTest {
     @WithMockUser(username = "test@example.com", roles = "USER")
     void updateTaskStatus_Success_ShouldReturn200OK() throws Exception {
         testTask.setStatus(TaskStatus.COMPLETED);
+        TaskResponse updatedResponse = new TaskResponse(testTask);
+
         given(taskService.updateTaskStatus(eq(100L), eq(TaskStatus.COMPLETED), eq("test@example.com")))
-                .willReturn(testTask);
+                .willReturn(updatedResponse);
+
+        TaskStatusUpdateRequest statusRequest = new TaskStatusUpdateRequest();
+        statusRequest.setStatus(TaskStatus.COMPLETED);
 
         mockMvc.perform(put("/tasks/100")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(TaskStatus.COMPLETED)))
+                        .content(objectMapper.writeValueAsString(statusRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("COMPLETED"));
     }

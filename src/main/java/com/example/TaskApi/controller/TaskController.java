@@ -1,6 +1,7 @@
 package com.example.TaskApi.controller;
 
 import com.example.TaskApi.dto.TaskRequest;
+import com.example.TaskApi.dto.TaskResponse;
 import com.example.TaskApi.dto.TaskStatusUpdateRequest;
 import com.example.TaskApi.model.Task;
 import com.example.TaskApi.services.TaskService;
@@ -12,6 +13,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -22,23 +24,23 @@ public class TaskController {
     private TaskService taskService;
 
     @PostMapping
-    public ResponseEntity<Task> createTask(@Valid @RequestBody TaskRequest taskRequest,
+    public ResponseEntity<TaskResponse> createTask(@Valid @RequestBody TaskRequest taskRequest,
                                            @AuthenticationPrincipal UserDetails userDetails) {
-        Task createdTask = taskService.createTask(taskRequest, userDetails.getUsername());
-        return new ResponseEntity<>(createdTask, HttpStatus.CREATED);
+        TaskResponse createdTask = taskService.createTask(taskRequest, userDetails.getUsername());
+        return ResponseEntity.created(URI.create("/tasks/" + createdTask.getId())).body(createdTask);
     }
 
     @GetMapping
-    public ResponseEntity<List<Task>> getTasks(@AuthenticationPrincipal UserDetails userDetails) {
-        List<Task> tasks = taskService.getTasksForUser(userDetails.getUsername());
+    public ResponseEntity<List<TaskResponse>> getTasks(@AuthenticationPrincipal UserDetails userDetails) {
+        List<TaskResponse> tasks = taskService.getTasksForUser(userDetails.getUsername());
         return ResponseEntity.ok(tasks);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Task> updateTaskStatus(@PathVariable Long id,
+    public ResponseEntity<TaskResponse> updateTaskStatus(@PathVariable Long id,
                                                  @Valid @RequestBody TaskStatusUpdateRequest statusRequest,
                                                  @AuthenticationPrincipal UserDetails userDetails) {
-        Task updatedTask = taskService.updateTaskStatus(id, statusRequest.getStatus(), userDetails.getUsername());
+        TaskResponse updatedTask = taskService.updateTaskStatus(id, statusRequest.getStatus(), userDetails.getUsername());
         return ResponseEntity.ok(updatedTask);
     }
 

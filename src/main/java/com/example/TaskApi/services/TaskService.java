@@ -1,6 +1,7 @@
 package com.example.TaskApi.services;
 
 import com.example.TaskApi.dto.TaskRequest;
+import com.example.TaskApi.dto.TaskResponse;
 import com.example.TaskApi.exception.TaskNotFoundException;
 import com.example.TaskApi.model.Task;
 import com.example.TaskApi.model.TaskStatus;
@@ -13,6 +14,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class TaskService {
@@ -23,10 +25,16 @@ public class TaskService {
     @Autowired
     private UserRepository userRepository;
 
+    private TaskResponse convertToDto(Task task) {
+        return new TaskResponse(task);
+    }
 
 
-    public Task createTask(TaskRequest taskRequest, String userEmail) {
-        User user = getUserByEmail(userEmail);
+
+    public TaskResponse createTask(TaskRequest taskRequest, String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
         Task task = Task.builder()
                 .title(taskRequest.getTitle())
                 .description(taskRequest.getDescription())
@@ -34,28 +42,41 @@ public class TaskService {
                 .user(user)
                 .build();
 
-        return taskRepository.save(task);
+        Task savedTask = taskRepository.save(task);
+        return convertToDto(savedTask);
     }
 
-    public List<Task> getTasksForUser(String userEmail) {
-        User user = getUserByEmail(userEmail);
-        return taskRepository.findByUserId(user.getId());
+    public List<TaskResponse> getTasksForUser(String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        return taskRepository.findByUserId(user.getId())
+                .stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
     }
 
-    public Task updateTaskStatus(Long taskId, TaskStatus status, String userEmail) {
-        User user = getUserByEmail(userEmail);
-        Task task = getTaskById(taskId);
+    public TaskResponse updateTaskStatus(Long taskId, TaskStatus status, String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new TaskNotFoundException("Task not found with id: " + taskId));
 
         if (!task.getUser().getId().equals(user.getId())) {
             throw new AccessDeniedException("You do not have permission to modify this task");
         }
         task.setStatus(status);
-        return taskRepository.save(task);
+        Task updatedTask = taskRepository.save(task);
+        return convertToDto(updatedTask);
     }
 
     public void deleteTask(Long taskId, String userEmail) {
-        User user = getUserByEmail(userEmail);
-        Task task = getTaskById(taskId);
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new TaskNotFoundException("Task not found with id: " + taskId));
         if (!task.getUser().getId().equals(user.getId())) {
             throw new AccessDeniedException("You do not have permission to delete this task");
         }
