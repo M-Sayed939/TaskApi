@@ -41,7 +41,7 @@ This project is built to demonstrate a senior-level approach to API design, incl
   * **Database:** PostgreSQL
   * **Validation:** Jakarta Bean Validation
   * **Build Tool:** Apache Maven
-
+  * **Testing:** JUnit 5
 -----
 
 ## Getting Started
