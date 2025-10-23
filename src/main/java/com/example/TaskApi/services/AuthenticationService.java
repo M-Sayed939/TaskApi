@@ -2,6 +2,7 @@ package com.example.TaskApi.services;
 
 import com.example.TaskApi.dto.LoginRequest;
 import com.example.TaskApi.dto.RegisterRequest;
+import com.example.TaskApi.exception.EmailAlreadyExistsException;
 import com.example.TaskApi.model.Role;
 import com.example.TaskApi.model.User;
 import com.example.TaskApi.repository.UserRepository;
@@ -26,7 +27,7 @@ public class AuthenticationService {
 
     public User register(RegisterRequest registerRequest) {
         if (userRepository.existsByEmail(registerRequest.getEmail())) {
-            throw new RuntimeException("Email is already in use");
+            throw new EmailAlreadyExistsException("Error: Email is already in use!");
         }
         User user = User.builder().
                 name(registerRequest.getName())
